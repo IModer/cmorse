@@ -84,14 +84,30 @@ void addtotree(Node * n, char c, char * morse, unsigned int mkod, int i)
             #endif
             return;
 		case '.':   //left
-			mkod += (int)pow((double)10, (double)i); // 1 * 10^i vagyis 1-el növeljük az i-edik jegyet 
-			addtotree(n->left,  c,  morse+1,    mkod,   i+1); //pointer magic
+			mkod += mpow(10, i); // 1 * 10^i vagyis 1-el növeljük az i-edik jegyet 
+			#ifdef DEBUG
+            printf("C:%c K:%d\n",*morse, mkod);
+            #endif
+            addtotree(n->left,  c,  morse+1,    mkod,   i+1); //pointer magic
 			break;
 		case '-':   //right
-            mkod += 2 * (int)pow((double)10, (double)i); //2-el növeljük az i-edik jegyet
-			addtotree(n->right, c,  morse+1,    mkod,   i+1); //pointer magic
+            mkod += 2 * mpow(10, i); //2-el növeljük az i-edik jegyet
+			#ifdef DEBUG
+            printf("C:%c K:%d\n",*morse, mkod);
+            #endif
+            addtotree(n->right, c,  morse+1,    mkod,   i+1); //pointer magic
 			break;
 	}
+}
+
+int mpow(int a, int n) //== a^n
+{
+    int pi = 1;
+    for (int i = 0; i < n; i++)
+    {
+        pi *= a;
+    }
+    return pi;
 }
 
 char decodemorse(Node * n, char * morse)
@@ -111,8 +127,6 @@ char decodemorse(Node * n, char * morse)
 			break;
 	}
 }
-
-int encode = 0;
 
 void encodemorse(Node * n, char c, char * ret)
 {
@@ -140,7 +154,10 @@ void encodemorse(Node * n, char c, char * ret)
         #ifdef DEBUG
         //printf("length = %d\n", length);
         #endif
-        int a = n->kod;
+        int a = n->kod; //pl 1122 -> --..
+        #ifdef DEBUG
+        printf("%c => %d\n", c, a);
+        #endif
         int i = 0;
         //for (; i < length; ++i)
         while (a != 0)
@@ -155,7 +172,13 @@ void encodemorse(Node * n, char c, char * ret)
                 //encod[i] = '.';
                 ret[i] = '.';
             }  
+            #ifdef DEBUG
+            printf("a osztas elott=%d\n",a);
+            #endif
             a /= 10;
+            #ifdef DEBUG
+            printf("a osztas utan=%d\n",a);
+            #endif
             i++;
             //printf("A=%d, I = %d\n", a, i);
         }
@@ -177,13 +200,16 @@ void encodemorse(Node * n, char c, char * ret)
 void add_morse(Node * n, char * morse, char c)
 {
     
-    //debug
-    //printf("add_morse:\t%p\t%p\t%c\n", n, morse, c);
-    //printf("----------------------------------------------\n");
-    //printf("\t\t[n]\t\t\t[c]\t[morse]\t\t\t[mkod]\t\t\t[mkod->s]\t[i]\n");
-    //adjuk meg melyin hosszú a morse
+    #ifdef DEBUG
+    printf("add_morse:\t%p\t%p\t%c\n", n, morse, c);
+    printf("----------------------------------------------\n");
+    printf("\t\t[n]\t\t\t[c]\t[morse]\t\t\t[mkod]\t\t\t[mkod->s]\t[i]\n");
+    adjuk meg melyin hosszú a morse
+    #endif
     addtotree(n, c, morse, 0, 0);
-    //printf("----------------------------------------------\n");
+    #ifdef DEBUG
+    printf("----------------------------------------------\n");
+    #endif
 }
 
 void printtree(Node * n)
@@ -276,8 +302,8 @@ int main(int argc, char **argv)
     printf("fa kesz\n\n");
 
     Node *n1 = createnode('A');
-    Node *n3 = createnode('C');
     Node *n2 = createnode('B');
+    Node *n3 = createnode('C');
     Node *n4 = createnode('D');
     n1->left=n2;
     n1->right=n3;
@@ -288,8 +314,8 @@ int main(int argc, char **argv)
     printf("Before calling add_morse: %p\n", r);
  
     add_morse(r, ".-",      'A');
-    add_morse(r, "-...",    'B' );
-    add_morse(r, "-.-.",    'C' );
+    add_morse(r, "-...",    'B');
+    add_morse(r, "-.-.",    'C');
     add_morse(r, "-..",     'D');
     add_morse(r, ".",       'E');
     add_morse(r, "..-.",    'F');
