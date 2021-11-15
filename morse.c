@@ -1,18 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "morse.h"
 #include <math.h>
-#define ALPHABET_LENGTH 26
+
+#include "morse.h"
 
 Node * createnode(char c)
 {
 	Node * n = (Node *)malloc(sizeof(Node));
     if (n == NULL)
     {
-        //unreachable
-        printf("OHNO!!\n");
+        //Error is we could not init a Node
+        fprintf(stderr, "Error: Not enough memory!\n");
     }
 	if (n != NULL) {
+        //Init the nodes values
 		n->left = NULL;
 		n->right = NULL;
 		n->kod = 0;
@@ -23,58 +24,69 @@ Node * createnode(char c)
 
 Node * createtree(int layers)
 {
-	Node * tree = createnode('*');
-	buildtree(tree, layers);
-    return tree;
+	Node * tree = createnode('*');  //Create main node
+	buildtree(tree, layers);        //Call build tree on it
+    return tree;                    //Return the pointer to the built tree
 }
 
 void buildtree(Node * n, int layer)
 {
+    
     #ifdef DEBUG
     printf("----------------------------------------------\n");
     printf("buildtree:\t%p \t%d\n", n, layer);
 	#endif
-    if (layer == 0)
+
+    //We have reached the end of the recursion
+    if (layer == 0) 
 	{
+        //Create the last 2 nodes
 		Node *l = createnode(' ');
         n->left = l;
         Node *r = createnode(' ');
         n->right = r;
+
         #ifdef DEBUG
         printf("Completed: %d\t\t with leaves \t%p\n\t\t\t\t\t%p\n", layer, l ,r);
 		printf("----------------------------------------------\n");
         #endif
+        
         return;
 	}
+
+    //Create child nodes with empty caracters and assign them
     Node *l = createnode(' ');
 	n->left = l;
     Node *r = createnode(' ');
 	n->right = r;
+
     #ifdef DEBUG
     printf("Building tree: %d\t with leaves \t%p\n\t\t\t\t\t%p\n", layer, l ,r);
     printf("----------------------------------------------\n");
 	#endif
+
+    //Recursively call buildtree
 	buildtree(l, layer-1);
 	buildtree(r, layer-1);
 }
-//	 híváskor:|-a fa     
-//			  |			|-car  
-//			  |			|		|-pointer a stringre ahonnan olvasunk
-//			  |			|		|			  -int ahova gyüjtjük a kódot (1='.' | 2='-')
-//			  |			|		|			  |		pl 0112 = -..
-//			  V			V		V 			  V 	pl 1122 = --..
-//addtotree  [n]       [c]     [morse]       kod        i <- hanyadok sorban vagyunk, a kodhoz kell
+
 void addtotree(Node * n, char c, char * morse, unsigned int mkod, int i)
 {
-    //debug
+    
     #ifdef DEBUG
     printf("addtotree:\t%p \t%c \t%p \n", n, c, morse);
 	#endif
-	switch (*morse)
+	
+    //Switch the current caracter of the morse code
+    switch (*morse)
 	{
+        //End of the code
         case '\0':
+
+            //Add the last caracter
             n->kod = mkod;
             n->caracter = c;
+
             #ifdef DEBUG
             printf("A node címe : \t%p\n",  n);
             printf("A karakter : \t%c\n",   n->caracter);
@@ -82,20 +94,32 @@ void addtotree(Node * n, char c, char * morse, unsigned int mkod, int i)
             printf("A mkod : \t%d\n",       mkod);
             printf("A morse : \t%s\n",      morse);
             #endif
+            
             return;
 		case '.':   //left
-			mkod += mpow(10, i); // 1 * 10^i vagyis 1-el növeljük az i-edik jegyet 
-			#ifdef DEBUG
+
+            //incode the morse code into mkod
+			mkod += mpow(10, i); // 1 * 10^i, we increase the ith position of mkod 
+		
+        	#ifdef DEBUG
             printf("C:%c K:%d\n",*morse, mkod);
             #endif
-            addtotree(n->left,  c,  morse+1,    mkod,   i+1); //pointer magic
+
+            //Recursively call with the next caracter (morse+1)
+            addtotree(n->left,  c,  morse+1,    mkod,   i+1);
 			break;
-		case '-':   //right
-            mkod += 2 * mpow(10, i); //2-el növeljük az i-edik jegyet
-			#ifdef DEBUG
+		
+        case '-':   //right
+            
+            //incode the morse code into mkod
+            mkod += 2 * mpow(10, i); //2 * 10^i, we increase the ith position of mkod
+			
+            #ifdef DEBUG
             printf("C:%c K:%d\n",*morse, mkod);
             #endif
-            addtotree(n->right, c,  morse+1,    mkod,   i+1); //pointer magic
+            
+            //Recursively call with the next caracter (morse+1)
+            addtotree(n->right, c,  morse+1,    mkod,   i+1);
 			break;
 	}
 }
@@ -114,102 +138,92 @@ char decodemorse(Node * n, char * morse)
 {
 	switch (*morse)
 	{
+
         case '\0':
+
             #ifdef DEBUG
             printf("decodemorse: %d\n", n->kod);
             #endif
+        
             return n->caracter;
-		case '.':   //left
-			decodemorse(n->left,   morse+1); //pointer magic
+		
+        case '.':   //left
+			decodemorse(n->left,   morse+1);
 			break;
-		case '-':   //right
-			decodemorse(n->right,  morse+1); //pointer magic
+		
+        case '-':   //right
+			decodemorse(n->right,  morse+1);
 			break;
-	}
+	
+    }
 }
 
-void encodemorse(Node * n, char c, char * ret)
+int encodemorse(Node * n, char c, char * ret)
 {
+    
     #ifdef DEBUG
     printf("encodemorse:\t%p\t%c=?=%c\n", n, c, n->caracter);
     printf("----------------------------------------------\n");
 	#endif
+
+    //Found the caracter
     if (n->caracter == c)
     {
-        #ifdef DEBUG
-        printf("encode returned %d\n", n->kod);
-        #endif
-        //encode the int into a stringre
-        
-        //int length = ((n->kod) / 10) + 1;
-        /*
-        int length = 0;
-        int a = n->kod;
-        while (a != 0)
-        {
-            a /= 10;
-            length++;
-        }
-        */
-        #ifdef DEBUG
-        //printf("length = %d\n", length);
-        #endif
         int a = n->kod; //pl 1122 -> --..
-        #ifdef DEBUG
-        printf("%c => %d\n", c, a);
-        #endif
         int i = 0;
-        //for (; i < length; ++i)
+        //Decode kod to a morse code
         while (a != 0)
         {
-            if (a % 2 == 0)   // osztható e kettővel, egye akkor az első számjegye 2 vagyis -
+            if (a % 2 == 0)   
             {
-                //encod[i] = '-';
                 ret[i] = '-';
             }
             else
             {
-                //encod[i] = '.';
                 ret[i] = '.';
             }  
+            
             #ifdef DEBUG
             printf("a osztas elott=%d\n",a);
             #endif
+            
             a /= 10;
+
             #ifdef DEBUG
             printf("a osztas utan=%d\n",a);
             #endif
+            
             i++;
-            //printf("A=%d, I = %d\n", a, i);
+
+            #ifdef DEBUG
+            printf("encode returned %d\n", n->kod);
+            printf("%c => %d\n", c, a);
+            printf("A=%d, I = %d\n", a, i);
+            #endif
         }
-        //encod[i] = '\0';
+
         ret[i] = '\0';
-        //printf("encod = %p\n", encod);
-        //ret = encod;
-        //printf("ret = %p\n", ret);
+        return n->kod;
     }
-    //printf("----------------------------------------------\n");
+
     if (n->left != NULL && n->right != NULL)
     {
         encodemorse(n->left,  c, ret);
         encodemorse(n->right, c, ret);
     }
-    return;
 }
 
 void add_morse(Node * n, char * morse, char c)
 {
-    
+
     #ifdef DEBUG
     printf("add_morse:\t%p\t%p\t%c\n", n, morse, c);
     printf("----------------------------------------------\n");
     printf("\t\t[n]\t\t\t[c]\t[morse]\t\t\t[mkod]\t\t\t[mkod->s]\t[i]\n");
-    adjuk meg melyin hosszú a morse
     #endif
+    
     addtotree(n, c, morse, 0, 0);
-    #ifdef DEBUG
-    printf("----------------------------------------------\n");
-    #endif
+
 }
 
 void printtree(Node * n)
@@ -232,12 +246,17 @@ int main(int argc, char **argv)
 {
     /* usage : morse.exe [MOD] "[MESSAGE]" */
     //Handle argv
-    //printf("argv[0] = %s,argv[1] = %s,argv[2] = %s\n", argv[0], argv[1],argv[2]);
+
+    #ifdef DEBUG
+    printf("argv[0] = %s,argv[1] = %s,argv[2] = %s\n", argv[0], argv[1],argv[2]);
+    #endif
+    
     if (argc != 3)
     {
         printf("Error: Wrong number of argoments provided\nusage : morse.exe [MODE] \"[MESSAGE]\"\nMode: \t1 - decode\n\t2 - encode");
         return 1;
     }
+    
     if ((!atoi(argv[1])) || atoi(argv[1]) < 1 || atoi(argv[1]) > 2) 
     {
         printf("Error: Wrong Mode provided \nusage : morse.exe [MODE] \"[MESSAGE]\"\nMode: \t1 - decode\n\t2 - encode");
@@ -247,7 +266,7 @@ int main(int argc, char **argv)
     int mode = atoi(argv[1]);
     char * input = argv[2];
     
-    //create tree
+    //Create tree
     Node *r;
     r = createtree(5);
     
@@ -259,14 +278,15 @@ int main(int argc, char **argv)
         char * morse_kod[10];
         char morse_caracter;
         fscanf(morse_file, "%s %c", morse_kod, &morse_caracter);
+        
         #ifdef DEBUG
         printf("read : %s %c\n", morse_kod, morse_caracter);
         #endif
+        
         add_morse(r, morse_kod, morse_caracter);
     }
     
     fclose(morse_file);
-    
     
     printf("Parsing the input string '%s'\n", input);
     const char delimiter[2] = " ";
@@ -276,10 +296,12 @@ int main(int argc, char **argv)
    
     /* walk through other tokens */
     while( token != NULL ) {
+
         #ifdef DEBUG
         printf( "%c\n", *token );
         printf( "%s\n", token );
         #endif
+        
         if (mode == 1)
         {
             char dec = decodemorse(r, token);
@@ -288,75 +310,12 @@ int main(int argc, char **argv)
         else
         {
             char enc[6];
-            encodemorse(r, *token, enc);
+            int a = encodemorse(r, *token, enc);
             printf("%s ", enc);
         }
         token = strtok(NULL, delimiter);
     }
+    printf("\n");
 
 	return 0;
-
-    /*
-    printf("Elindult\n\n");
-    node * r = createtree(5); //morsetree
-    printf("fa kesz\n\n");
-
-    Node *n1 = createnode('A');
-    Node *n2 = createnode('B');
-    Node *n3 = createnode('C');
-    Node *n4 = createnode('D');
-    n1->left=n2;
-    n1->right=n3;
-    n2->left=n4;
-
-    printf("%p\n", n1->left->left);
-    
-    printf("Before calling add_morse: %p\n", r);
- 
-    add_morse(r, ".-",      'A');
-    add_morse(r, "-...",    'B');
-    add_morse(r, "-.-.",    'C');
-    add_morse(r, "-..",     'D');
-    add_morse(r, ".",       'E');
-    add_morse(r, "..-.",    'F');
-    add_morse(r, "--.",     'G');
-    add_morse(r, "....",    'H');
-    add_morse(r, "..",      'I');
-    add_morse(r, ".---",    'J');
-    add_morse(r, "-.-",     'K');
-    add_morse(r, ".-..",    'L');
-    add_morse(r, "--",      'M');
-    add_morse(r, "-.",      'N');
-    add_morse(r, "---",     'O');
-    add_morse(r, ".--.",    'P');
-    add_morse(r, "--.-",    'Q');
-    add_morse(r, ".-.",     'R');
-    add_morse(r, "...",     'S');
-    add_morse(r, "-",       'T');
-    add_morse(r, "..-",     'U');
-    add_morse(r, "...-",    'V');
-    add_morse(r, ".--",     'W');
-    add_morse(r, "-..-",    'X');
-    add_morse(r, "-.--",    'Y');
-    add_morse(r, "--..",    'Z');
-
-    
-    
-    
-    
-    char * kod = "..";
-    char i1 = decodemorse(r, kod);
-    printf("This should be a b => %c\n", i1);
-    
-    printf("%c\n", r->caracter);
-    printf("%c\n", r->right->right->caracter);
-    printf("%c\n", r->left->left->caracter);
-    
-    printtree(r);
-    
-    
-    char i2[5];
-    encodemorse(r, 'I', i2);
-    printf("This should be \"..\" => %s\n", i2);
-    */
 }
